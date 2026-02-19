@@ -291,6 +291,9 @@ local function initializeComputerPlayer(boardPieces, mainLabel)
   BOARD = resetBoard()
   mainLabel.String = "X's Turn"
 
+  PLAYER = "O"
+  OPPONENT = "X"
+
   for i, b in ipairs(boardPieces) do
     b.IsDisabled = false
     changeBoardPieceStates(boardPieces, false)
@@ -353,6 +356,9 @@ end
 local function initializeTwoPlayer(boardPieces, mainLabel)
   BOARD = resetBoard()
   mainLabel.String = "X's Turn"
+
+  PLAYER = "X"
+  OPPONENT = "O"
 
   for i, b in ipairs(boardPieces) do
     b.IsDisabled = false
