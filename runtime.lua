@@ -1,12 +1,78 @@
 ---@diagnostic disable: undefined-global
 
-local PLAYER = "X"
+local HUMAN_PLAYER = "X"
 local SIZE = 3
 local MODE = nil
-local EMPTY = ""
+local EMPTY = "_"
 local GAME_STATUS = "initialized"
-local MAX_PLAYER = "X"
-local MIN_PLAYER = "O"
+local PLAYER = "O"
+local OPPONENT = "X"
+
+local OPENING_BOOK = {
+  ["X________"] = { 2, 2 },
+  ["XX__O____"] = { 1, 3 },
+  ["X__XO____"] = { 3, 1 },
+  ["X___OX___"] = { 1, 2 },
+  ["X___O__X_"] = { 2, 1 },
+  ["_X_______"] = { 1, 1 },
+  ["OXX______"] = { 2, 1 },
+  ["OX___X___"] = { 3, 1 },
+  ["OX____X__"] = { 2, 2 },
+  ["OX_____X_"] = { 2, 2 },
+  ["OX______X"] = { 2, 2 },
+  ["__X______"] = { 2, 2 },
+  ["X_X_O____"] = { 1, 2 },
+  ["_XX_O____"] = { 1, 1 },
+  ["__XXO____"] = { 1, 1 },
+  ["__X_OX___"] = { 3, 3 },
+  ["__X_O__X_"] = { 2, 1 },
+  ["___X_____"] = { 1, 1 },
+  ["OX_X_____"] = { 2, 2 },
+  ["O_XX_____"] = { 2, 2 },
+  ["O__X_X___"] = { 2, 2 },
+  ["O__X__X__"] = { 1, 2 },
+  ["O__X___X_"] = { 1, 3 },
+  ["O__X____X"] = { 1, 3 },
+  ["____X____"] = { 1, 1 },
+  ["OX__X____"] = { 3, 2 },
+  ["O_X_X____"] = { 3, 1 },
+  ["O__XX____"] = { 2, 3 },
+  ["O___XX___"] = { 2, 1 },
+  ["O___X_X__"] = { 1, 3 },
+  ["O___X__X_"] = { 1, 2 },
+  ["O___X___X"] = { 1, 3 },
+  ["_____X___"] = { 1, 3 },
+  ["X_O__X___"] = { 2, 1 },
+  ["_XO__X___"] = { 2, 1 },
+  ["__OX_X___"] = { 2, 2 },
+  ["__O_XX___"] = { 2, 1 },
+  ["__O__XX__"] = { 1, 1 },
+  ["__O__X_X_"] = { 1, 1 },
+  ["__O__X__X"] = { 1, 1 },
+  ["______X__"] = { 2, 2 },
+  ["X___O_X__"] = { 2, 1 },
+  ["_X__O_X__"] = { 1, 1 },
+  ["__X_O_X__"] = { 1, 2 },
+  ["___XO_X__"] = { 1, 1 },
+  ["____OXX__"] = { 1, 2 },
+  ["____O_XX_"] = { 3, 3 },
+  ["_______X_"] = { 1, 2 },
+  ["XO_____X_"] = { 3, 1 },
+  ["_OX____X_"] = { 3, 1 },
+  ["_O_X___X_"] = { 3, 1 },
+  ["_O__X__X_"] = { 1, 1 },
+  ["_O___X_X_"] = { 3, 1 },
+  ["_O____XX_"] = { 3, 3 },
+  ["_O_____XX"] = { 3, 1 },
+  ["________X"] = { 2, 2 },
+  ["X___O___X"] = { 1, 2 },
+  ["_X__O___X"] = { 1, 1 },
+  ["__X_O___X"] = { 2, 3 },
+  ["___XO___X"] = { 1, 1 },
+  ["____OX__X"] = { 1, 3 },
+  ["____O_X_X"] = { 3, 2 },
+  ["____O__XX"] = { 3, 1 },
+}
 
 local BOARD = {
   { EMPTY, EMPTY, EMPTY },
@@ -34,143 +100,155 @@ local function resetBoard()
   }
 end
 
-local function checkWin(board, size)
-  for i = 1, size do
-    if board[i][1] ~= EMPTY and board[i][1] == board[i][2] and board[i][2] == board[i][3] then
-      return board[i][1]
-    end
-    if board[1][i] ~= EMPTY and board[1][i] == board[2][i] and board[2][i] == board[3][i] then
-      return board[1][i]
-    end
-  end
-
-  if board[1][1] ~= EMPTY and board[1][1] == board[2][2] and board[2][2] == board[3][3] then
-    return board[1][1]
-  end
-
-  if board[1][3] ~= EMPTY and board[1][3] == board[2][2] and board[2][2] == board[3][1] then
-    return board[1][3]
-  end
-
-  for i = 1, size do
-    for j = 1, size do
+local function isMovesLeft(board)
+  for i = 1, 3 do
+    for j = 1, 3 do
       if board[i][j] == EMPTY then
-        return "ongoing"
+        return true
+      end
+    end
+  end
+  return false
+end
+
+local function evaluate(b)
+  for row = 1, 3 do
+    if b[row][1] ~= EMPTY and b[row][1] == b[row][2] and b[row][2] == b[row][3] then
+      if b[row][1] == PLAYER then
+        return 10
+      elseif b[row][1] == OPPONENT then
+        return -10
       end
     end
   end
 
-  return "draw"
+  for col = 1, 3 do
+    if b[1][col] ~= EMPTY and b[1][col] == b[2][col] and b[2][col] == b[3][col] then
+      if b[1][col] == PLAYER then
+        return 10
+      elseif b[1][col] == OPPONENT then
+        return -10
+      end
+    end
+  end
+
+  if b[1][1] ~= EMPTY and b[1][1] == b[2][2] and b[2][2] == b[3][3] then
+    if b[1][1] == PLAYER then
+      return 10
+    elseif b[1][1] == OPPONENT then
+      return -10
+    end
+  end
+
+  if b[1][3] ~= EMPTY and b[1][3] == b[2][2] and b[2][2] == b[3][1] then
+    if b[1][3] == PLAYER then
+      return 10
+    elseif b[1][3] == OPPONENT then
+      return -10
+    end
+  end
+
+  return 0
+end
+
+local function minimax(board, depth, isMax, alpha, beta)
+  local score = evaluate(board)
+
+  if score == 10 then return score - depth end
+  if score == -10 then return score + depth end
+  if not isMovesLeft(board) then return 0 end
+
+  if isMax then
+    local best = -1000
+    for i = 1, 3 do
+      for j = 1, 3 do
+        if board[i][j] == EMPTY then
+          board[i][j] = PLAYER
+          best = math.max(best, minimax(board, depth + 1, false, alpha, beta))
+          board[i][j] = EMPTY
+          alpha = math.max(alpha, best)
+          if beta <= alpha then return best end
+        end
+      end
+    end
+    return best
+  else
+    local best = 1000
+    for i = 1, 3 do
+      for j = 1, 3 do
+        if board[i][j] == EMPTY then
+          board[i][j] = OPPONENT
+          best = math.min(best, minimax(board, depth + 1, true, alpha, beta))
+          board[i][j] = EMPTY
+          beta = math.min(beta, best)
+          if beta <= alpha then return best end
+        end
+      end
+    end
+    return best
+  end
+end
+
+local function getBoardKey(b)
+  local k = ""
+  for i = 1, 3 do for j = 1, 3 do k = k .. b[i][j] end end
+  return k
+end
+
+local function findBestMove(board)
+  local bestVal = -1000
+  local bestMove = { row = -1, col = -1 }
+
+  for i = 1, 3 do
+    for j = 1, 3 do
+      if board[i][j] == EMPTY then
+        board[i][j] = PLAYER
+        local moveVal = minimax(board, 0, false, -1000, 1000)
+        board[i][j] = EMPTY
+
+        if moveVal > bestVal then
+          bestMove.row = i
+          bestMove.col = j
+          bestVal = moveVal
+        end
+      end
+    end
+  end
+
+  return bestMove
+end
+
+local function getSmartMove(board)
+  local key = getBoardKey(board)
+
+  if OPENING_BOOK[key] then
+    local bookMove = OPENING_BOOK[key]
+
+    print(string.format("Tic-Tac-Toe: OPENING_BOOK Lookup Found for key [%s]", key))
+    print(string.format("Tic-Tac-Toe: OPENING_BOOK row = %d col = %d", bookMove[1], bookMove[2]))
+
+    return { row = bookMove[1], col = bookMove[2] }
+  end
+
+  print(string.format("Tic-Tac-Toe: OPENING_BOOK Lookup Not Found for key [%s]", key))
+  print("Tic-Tac-Toe: Finding Best Move With Minimax")
+
+  return findBestMove(board)
 end
 
 local function drawBoardState(boardPieces)
   for i, row in ipairs(BOARD) do
     for j, cell in ipairs(row) do
       local idx = rowColToIndex(i, j, SIZE)
-      boardPieces[idx].Legend = cell or ""
-    end
-  end
-end
+      local presentationVal = cell
 
-local function availableMoves(board, size)
-  local moves = {}
-
-  for r = 1, size do
-    for c = 1, size do
-      if board[r][c] == EMPTY then
-        table.insert(moves, { r, c })
+      if presentationVal == "_" then
+        presentationVal = ""
       end
+
+      boardPieces[idx].Legend = presentationVal
     end
   end
-  return moves
-end
-
-local function utility(terminalResult, depth)
-  if terminalResult == MAX_PLAYER then
-    return 10 - depth
-  elseif terminalResult == MIN_PLAYER then
-    return depth - 10
-  else
-    return 0
-  end
-end
-
-local function minimax(board, depth, maximizing, alpha, beta, size, playAsMinimizer)
-  local terminal = checkWin(board, size)
-
-  if terminal ~= nil or #availableMoves(board, size) == 0 then
-    return utility(terminal, depth)
-  end
-
-  local best = maximizing and -1000 or 1000
-
-  for _, move in ipairs(availableMoves(board, size)) do
-    local r, c = move[1], move[2]
-    local piece
-
-    if maximizing then
-      piece = playAsMinimizer and MIN_PLAYER or MAX_PLAYER
-    else
-      piece = playAsMinimizer and MAX_PLAYER or MIN_PLAYER
-    end
-
-    board[r][c] = piece
-    local val = minimax(board, depth + 1,
-      not maximizing,
-      alpha, beta, size,
-      playAsMinimizer)
-
-    board[r][c] = EMPTY
-
-    if maximizing then
-      if val > best then best = val end
-      if best > alpha then alpha = best end
-    else
-      if val < best then best = val end
-      if best < beta then beta = best end
-    end
-
-    if beta <= alpha then
-      return best
-    end
-  end
-
-  return best
-end
-
-
-local function getBestMove(board, size, minPlayer)
-  local bestScore = minPlayer and 1000 or -1000
-  local bestMove  = nil
-
-  for _, move in ipairs(availableMoves(board, size)) do
-    local r, c = move[1], move[2]
-    if minPlayer then
-      board[r][c] = MIN_PLAYER
-    else
-      board[r][c] = MAX_PLAYER
-    end
-
-    local maximizing = not minPlayer
-
-    local score = minimax(board, 0, maximizing, -1000, 1000, size, minPlayer)
-
-    board[r][c] = EMPTY
-
-    if minPlayer then
-      if score < bestScore then
-        bestScore = score
-        bestMove  = { r, c }
-      end
-    else
-      if score > bestScore then
-        bestScore = score
-        bestMove  = { r, c }
-      end
-    end
-  end
-
-  return bestMove
 end
 
 local function changeBoardPieceStates(boardPieces, isDisabled)
@@ -180,15 +258,13 @@ local function changeBoardPieceStates(boardPieces, isDisabled)
 end
 
 local function makeComputerMove()
-  PLAYER = "O"
-
-  local bestMove = getBestMove(BOARD, SIZE)
+  local bestMove = getSmartMove(BOARD)
   local bestRow = nil
   local bestCol = nil
 
   if bestMove then
-    bestRow = bestMove[1]
-    bestCol = bestMove[2]
+    bestRow = bestMove.row
+    bestCol = bestMove.col
     print("Computer decided that best move is " .. bestRow .. " " .. bestCol)
   end
 
@@ -227,24 +303,34 @@ local function initializeComputerPlayer(boardPieces, mainLabel)
 
         if BOARD[row] then
           if BOARD[row][col] == EMPTY then
-            BOARD[row][col] = PLAYER
+            BOARD[row][col] = HUMAN_PLAYER
           else
             changeBoardPieceStates(boardPieces, false)
             return
           end
         end
 
-        if PLAYER == "X" then
+        if HUMAN_PLAYER == "X" then
           mainLabel.String = "O's Turn"
           makeComputerMove()
         end
 
         mainLabel.String = "X's Turn"
-        PLAYER = "X"
+        HUMAN_PLAYER = "X"
 
         drawBoardState(boardPieces)
 
-        GAME_STATUS = checkWin(BOARD, SIZE)
+        local terminalState = evaluate(BOARD)
+        if terminalState < 0 then
+          GAME_STATUS = "O"
+        elseif terminalState > 0 then
+          GAME_STATUS = "X"
+        elseif terminalState == 0 and isMovesLeft(BOARD) == false then
+          GAME_STATUS = "draw"
+        else
+          GAME_STATUS = "ongoing"
+        end
+
         updateGameStatus(boardPieces, mainLabel)
       end
     end
@@ -253,7 +339,7 @@ end
 
 local function startApp(onePlayer, twoPlayer, startGame, boardPieces)
   BOARD = resetBoard()
-  PLAYER = "X"
+  HUMAN_PLAYER = "X"
   GAME_STATUS = "initialized"
   drawBoardState(boardPieces)
   onePlayer.Value = 0
@@ -279,24 +365,34 @@ local function initializeTwoPlayer(boardPieces, mainLabel)
         local row, col = indexToRowCol(i, SIZE)
         if BOARD[row] then
           if BOARD[row][col] == EMPTY then
-            BOARD[row][col] = PLAYER
+            BOARD[row][col] = HUMAN_PLAYER
           else
             changeBoardPieceStates(boardPieces, false)
             return
           end
         end
 
-        if PLAYER == "X" then
+        if HUMAN_PLAYER == "X" then
           mainLabel.String = "O's Turn"
-          PLAYER = "O"
+          HUMAN_PLAYER = "O"
         else
           mainLabel.String = "X's Turn"
-          PLAYER = "X"
+          HUMAN_PLAYER = "X"
         end
 
         drawBoardState(boardPieces)
 
-        GAME_STATUS = checkWin(BOARD, SIZE)
+        local terminalState = evaluate(BOARD)
+        if terminalState < 0 then
+          GAME_STATUS = "O"
+        elseif terminalState > 0 then
+          GAME_STATUS = "X"
+        elseif terminalState == 0 and isMovesLeft(BOARD) == false then
+          GAME_STATUS = "draw"
+        else
+          GAME_STATUS = "ongoing"
+        end
+
         updateGameStatus(boardPieces, mainLabel)
       end
     end
