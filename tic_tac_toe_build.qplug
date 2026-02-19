@@ -3,7 +3,7 @@
 PluginInfo = {
   Name = "Tic-Tac-Toe",
   Version = "0.1",
-  BuildVersion = "2.0.1.41",
+  BuildVersion = "2.0.1.44",
   Id = "156af925-61ad-48ed-be9d-72744b021415",
   Author = "Jonathan C",
   Description = "A tic-tac-toe game you can play with your friends in Q-SYS",
@@ -463,6 +463,9 @@ local function initializeComputerPlayer(boardPieces, mainLabel)
   BOARD = resetBoard()
   mainLabel.String = "X's Turn"
 
+  PLAYER = "O"
+  OPPONENT = "X"
+
   for i, b in ipairs(boardPieces) do
     b.IsDisabled = false
     changeBoardPieceStates(boardPieces, false)
@@ -494,9 +497,9 @@ local function initializeComputerPlayer(boardPieces, mainLabel)
 
         local terminalState = evaluate(BOARD)
         if terminalState < 0 then
-          GAME_STATUS = "O"
-        elseif terminalState > 0 then
           GAME_STATUS = "X"
+        elseif terminalState > 0 then
+          GAME_STATUS = "O"
         elseif terminalState == 0 and isMovesLeft(BOARD) == false then
           GAME_STATUS = "draw"
         else
@@ -525,6 +528,9 @@ end
 local function initializeTwoPlayer(boardPieces, mainLabel)
   BOARD = resetBoard()
   mainLabel.String = "X's Turn"
+
+  PLAYER = "X"
+  OPPONENT = "O"
 
   for i, b in ipairs(boardPieces) do
     b.IsDisabled = false
