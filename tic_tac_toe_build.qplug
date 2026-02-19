@@ -3,7 +3,7 @@
 PluginInfo = {
   Name = "Tic-Tac-Toe",
   Version = "0.1",
-  BuildVersion = "2.0.1.0",
+  BuildVersion = "2.0.1.3",
   Id = "156af925-61ad-48ed-be9d-72744b021415",
   Author = "Jonathan C",
   Description = "A tic-tac-toe game you can play with your friends in Q-SYS",
@@ -267,18 +267,34 @@ local function utility(terminalResult, depth)
   end
 end
 
-local function minimax(board, depth, maximizing, alpha, beta, size)
+local function minimax(board, depth, maximizing, alpha, beta, size, playAsMinimizer)
+  -- 1️⃣  Terminal test
   local terminal = checkWin(board, size)
-
   if terminal ~= nil or #availableMoves(board, size) == 0 then
     return utility(terminal, depth)
   end
 
+  -- 2️⃣  Initialise best value for this node
   local best = maximizing and -1000 or 1000
+
+  -- 3️⃣  Explore every legal move
   for _, move in ipairs(availableMoves(board, size)) do
     local r, c = move[1], move[2]
-    board[r][c] = maximizing and MAX_PLAYER or MIN_PLAYER
-    local val = minimax(board, depth + 1, not maximizing, alpha, beta, size)
+    local piece
+
+    if maximizing then
+      piece = playAsMinimizer and MIN_PLAYER or MAX_PLAYER
+    else
+      piece = playAsMinimizer and MAX_PLAYER or MIN_PLAYER
+    end
+
+    board[r][c] = piece
+    local val = minimax(board, depth + 1,
+      not maximizing,
+      alpha, beta, size,
+      playAsMinimizer)
+
+    board[r][c] = EMPTY
 
     if maximizing then
       if val > best then best = val end
@@ -288,8 +304,6 @@ local function minimax(board, depth, maximizing, alpha, beta, size)
       if best < beta then beta = best end
     end
 
-    board[r][c] = EMPTY
-
     if beta <= alpha then
       return best
     end
@@ -298,19 +312,35 @@ local function minimax(board, depth, maximizing, alpha, beta, size)
   return best
 end
 
-local function getBestMove(board, size)
-  local bestScore = -1000
+
+local function getBestMove(board, size, minPlayer)
+  local bestScore = minPlayer and 1000 or -1000
   local bestMove  = nil
 
   for _, move in ipairs(availableMoves(board, size)) do
     local r, c = move[1], move[2]
-    board[r][c] = MAX_PLAYER
+    if minPlayer then
+      board[r][c] = MIN_PLAYER
+    else
+      board[r][c] = MAX_PLAYER
+    end
 
-    local score = minimax(board, 0, false, -1000, 1000, size)
+    local maximizing = not minPlayer
+
+    local score = minimax(board, 0, maximizing, -1000, 1000, size, minPlayer)
+
     board[r][c] = EMPTY
-    if score > bestScore then
-      bestScore = score
-      bestMove  = { r, c }
+
+    if minPlayer then
+      if score < bestScore then
+        bestScore = score
+        bestMove  = { r, c }
+      end
+    else
+      if score > bestScore then
+        bestScore = score
+        bestMove  = { r, c }
+      end
     end
   end
 
@@ -421,7 +451,6 @@ local function initializeTwoPlayer(boardPieces, mainLabel)
         self.IsDisabled = true
         changeBoardPieceStates(boardPieces, true)
         local row, col = indexToRowCol(i, SIZE)
-
         if BOARD[row] then
           if BOARD[row][col] == EMPTY then
             BOARD[row][col] = PLAYER

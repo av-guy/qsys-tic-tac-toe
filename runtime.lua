@@ -95,7 +95,7 @@ local function utility(terminalResult, depth)
   end
 end
 
-local function minimax(board, depth, maximizing, alpha, beta, size)
+local function minimax(board, depth, maximizing, alpha, beta, size, playAsMinimizer)
   local terminal = checkWin(board, size)
 
   if terminal ~= nil or #availableMoves(board, size) == 0 then
@@ -103,10 +103,24 @@ local function minimax(board, depth, maximizing, alpha, beta, size)
   end
 
   local best = maximizing and -1000 or 1000
+
   for _, move in ipairs(availableMoves(board, size)) do
     local r, c = move[1], move[2]
-    board[r][c] = maximizing and MAX_PLAYER or MIN_PLAYER
-    local val = minimax(board, depth + 1, not maximizing, alpha, beta, size)
+    local piece
+
+    if maximizing then
+      piece = playAsMinimizer and MIN_PLAYER or MAX_PLAYER
+    else
+      piece = playAsMinimizer and MAX_PLAYER or MIN_PLAYER
+    end
+
+    board[r][c] = piece
+    local val = minimax(board, depth + 1,
+      not maximizing,
+      alpha, beta, size,
+      playAsMinimizer)
+
+    board[r][c] = EMPTY
 
     if maximizing then
       if val > best then best = val end
@@ -116,8 +130,6 @@ local function minimax(board, depth, maximizing, alpha, beta, size)
       if best < beta then beta = best end
     end
 
-    board[r][c] = EMPTY
-
     if beta <= alpha then
       return best
     end
@@ -126,19 +138,35 @@ local function minimax(board, depth, maximizing, alpha, beta, size)
   return best
 end
 
-local function getBestMove(board, size)
-  local bestScore = -1000
+
+local function getBestMove(board, size, minPlayer)
+  local bestScore = minPlayer and 1000 or -1000
   local bestMove  = nil
 
   for _, move in ipairs(availableMoves(board, size)) do
     local r, c = move[1], move[2]
-    board[r][c] = MAX_PLAYER
+    if minPlayer then
+      board[r][c] = MIN_PLAYER
+    else
+      board[r][c] = MAX_PLAYER
+    end
 
-    local score = minimax(board, 0, false, -1000, 1000, size)
+    local maximizing = not minPlayer
+
+    local score = minimax(board, 0, maximizing, -1000, 1000, size, minPlayer)
+
     board[r][c] = EMPTY
-    if score > bestScore then
-      bestScore = score
-      bestMove  = { r, c }
+
+    if minPlayer then
+      if score < bestScore then
+        bestScore = score
+        bestMove  = { r, c }
+      end
+    else
+      if score > bestScore then
+        bestScore = score
+        bestMove  = { r, c }
+      end
     end
   end
 
@@ -249,7 +277,6 @@ local function initializeTwoPlayer(boardPieces, mainLabel)
         self.IsDisabled = true
         changeBoardPieceStates(boardPieces, true)
         local row, col = indexToRowCol(i, SIZE)
-
         if BOARD[row] then
           if BOARD[row][col] == EMPTY then
             BOARD[row][col] = PLAYER
