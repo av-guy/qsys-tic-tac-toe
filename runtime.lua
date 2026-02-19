@@ -325,9 +325,9 @@ local function initializeComputerPlayer(boardPieces, mainLabel)
 
         local terminalState = evaluate(BOARD)
         if terminalState < 0 then
-          GAME_STATUS = "O"
-        elseif terminalState > 0 then
           GAME_STATUS = "X"
+        elseif terminalState > 0 then
+          GAME_STATUS = "O"
         elseif terminalState == 0 and isMovesLeft(BOARD) == false then
           GAME_STATUS = "draw"
         else
